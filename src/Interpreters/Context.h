@@ -162,6 +162,8 @@ using ReadTaskCallback = std::function<String()>;
 
 using MergeTreeReadTaskCallback = std::function<std::optional<PartitionReadResponse>(PartitionReadRequest)>;
 
+class TemporaryDataOnDisk;
+using TemporaryDataOnDiskPtr = std::shared_ptr<TemporaryDataOnDisk>;
 
 #if USE_ROCKSDB
 class MergeTreeMetadataCache;
@@ -363,6 +365,8 @@ private:
     /// A flag, used to mark if reader needs to apply deleted rows mask.
     bool apply_deleted_mask = true;
 
+    /// Temprary data for query execution.
+    TemporaryDataOnDiskPtr temp_data_on_disk;
 public:
     // Top-level OpenTelemetry trace context for the query. Makes sense only for a query context.
     OpenTelemetryTraceContext query_trace_context;
@@ -418,7 +422,10 @@ public:
     /// A list of warnings about server configuration to place in `system.warnings` table.
     Strings getWarnings() const;
 
-    VolumePtr getTemporaryVolume() const;
+    VolumePtr getTemporaryVolume() const; /// TODO: remove, use `getTempDataOnDisk`
+
+    TemporaryDataOnDiskPtr getTempDataOnDisk() const;
+    void setTempDataOnDisk(const TemporaryDataOnDiskPtr & temp_data_on_disk_);
 
     void setPath(const String & path);
     void setFlagsPath(const String & path);
@@ -429,7 +436,7 @@ public:
 
     void addWarningMessage(const String & msg) const;
 
-    VolumePtr setTemporaryStorage(const String & path, const String & policy_name = "");
+    VolumePtr setTemporaryStorage(const String & path, const String & policy_name = "", size_t max_size = 0);
 
     using ConfigurationPtr = Poco::AutoPtr<Poco::Util::AbstractConfiguration>;
 
